@@ -202,13 +202,16 @@ def run_multiturn_test(tools_list):
                     all_success = False
                 print("│")
             
-            print(f"└─ 최종 결과: {'🎯 전체 성공!' if all_success else '💥 일부 실패'}")
+            print(f"└─ 최종 결과: {'전체 성공!' if all_success else '일부 실패'}")
                 
         except Exception as e:
             print(f"│ [에러] {e}")
         print("└" + "─"*69 + "\n")
 
 if __name__ == "__main__":
-    TOTAL_TOOL_COUNT = 300
+    TOTAL_TOOL_COUNT = 100
     final_tools = prepare_test_suite(TOTAL_TOOL_COUNT, "middle")
-    run_multiturn_test(final_tools)
+    
+    for i in range(3):
+        print(f"\n[{i+1}회차 반복 실행]")
+        run_multiturn_test(final_tools)
