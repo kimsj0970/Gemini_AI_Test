@@ -43,36 +43,84 @@ def check_stock(item_name: str, size: str = None, color: str = None) -> dict:
             "status": "not_found",
             "item": item_name,
             "stock": 0,
-            "message": f"'{item_name}' 상품을 찾을 수 없습니다.",
+            "message": f"'{item_name}' 상품은 취급하지 않습니다.",
         }
 
-    candidates = []
-    for (c, s), qty in _STOCK_DB[category].items():
-        color_ok = color is None or color.lower() in c.lower() or c.lower() in color.lower()
-        size_ok  = size  is None or size.upper() == s.upper()
-        if color_ok and size_ok:
-            candidates.append({"color": c, "size": s, "quantity": qty})
+    all_entries = _STOCK_DB[category]
 
-    if not candidates:
-        return {"status": "not_found", "item": item_name, "stock": 0, "message": "해당 조건의 상품이 없습니다."}
+    # color가 지정된 경우 DB에 해당 색상이 존재하는지 먼저 확인
+    if color is not None:
+        available_colors = {c for (c, s) in all_entries}
+        color_match = next(
+            (c for c in available_colors
+             if color.lower() in c.lower() or c.lower() in color.lower()),
+            None
+        )
+        if color_match is None:
+            return {
+                "status": "not_found",
+                "item": item_name,
+                "stock": 0,
+                "message": f"'{color}' 색상은 취급하지 않습니다. 가능한 색상: {sorted(available_colors)}",
+            }
+        color = color_match  # 정규화된 DB 키로 교체
 
-    in_stock = [c for c in candidates if c["quantity"] > 0]
-    if in_stock:
-        best = in_stock[0]
+    # size가 지정된 경우 DB에 해당 사이즈가 존재하는지 먼저 확인
+    if size is not None:
+        available_sizes = {s for (c, s) in all_entries}
+        if size.upper() not in available_sizes:
+            return {
+                "status": "not_found",
+                "item": item_name,
+                "stock": 0,
+                "message": f"'{size}' 사이즈는 취급하지 않습니다. 가능한 사이즈: {sorted(available_sizes)}",
+            }
+        size = size.upper()
+
+    # color·size 중 하나라도 미지정이면 정확한 조건 없이 조회 불가
+    # → 현재 취급 중인 색상·사이즈 목록을 안내하고 재질문 유도
+    if color is None or size is None:
+        available_colors = sorted({c for (c, s) in all_entries})
+        available_sizes  = sorted({s for (c, s) in all_entries})
+        missing = []
+        if color is None:
+            missing.append(f"색상 (가능: {available_colors})")
+        if size is None:
+            missing.append(f"사이즈 (가능: {available_sizes})")
+        return {
+            "status": "need_more_info",
+            "item": item_name,
+            "stock": 0,
+            "message": f"정확한 재고 조회를 위해 {' 및 '.join(missing)}을 알려주세요.",
+        }
+
+    # color·size 둘 다 지정된 경우에만 정확히 조회
+    qty = all_entries.get((color, size), None)
+
+    if qty is None:
+        # 색상은 있지만 그 색상에 해당 사이즈 조합이 없는 경우
+        available_sizes_for_color = sorted({s for (c, s) in all_entries if c == color})
+        return {
+            "status": "not_found",
+            "item": f"{category} ({color}/{size})",
+            "stock": 0,
+            "message": f"'{color}/{size}' 조합은 없습니다. '{color}' 색상의 가능한 사이즈: {available_sizes_for_color}",
+        }
+
+    if qty > 0:
         return {
             "status": "in_stock",
-            "item": f"{category} ({best['color']}/{best['size']})",
-            "stock": best["quantity"],
+            "item": f"{category} ({color}/{size})",
+            "stock": qty,
             "base_price": _PRICE_DB.get(category, 50000),
-            "message": f"재고 {best['quantity']}개 있음.",
+            "message": f"재고 {qty}개 있음.",
         }
     else:
-        c = candidates[0]
         return {
             "status": "out_of_stock",
-            "item": f"{category} ({c['color']}/{c['size']})",
+            "item": f"{category} ({color}/{size})",
             "stock": 0,
-            "message": "재고 없음.",
+            "message": "해당 상품의 재고가 없습니다.",
         }
 
 
