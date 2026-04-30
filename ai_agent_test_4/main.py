@@ -46,13 +46,11 @@ DECOY_TOOLS = [
 
 TOOLS = [
     {
-        # 1단계: 재고 확인
-        # description에 "재고 있고 구매 원하면 process_payment 호출"을 명시
+        # 1단계: 재고 확인 — 다음 도구 이름 미명시, 흐름만 암시
         "name": "check_fashion_stock",
         "description": (
-            "의류 상품의 실제 재고를 조회합니다. "
-            "재고가 있고 사용자가 구매를 원한다면 process_payment 도구를 호출하세요. "
-            "재고 정보만 원하거나 재고가 없다면 결과를 바로 응답하고 종료하세요."
+            "의류 상품의 재고를 확인합니다. "
+            "재고 확인 후 고객이 구매를 원하면 결제 단계로 넘어갑니다."
         ),
         "parameters": {
             "type": "OBJECT",
@@ -65,13 +63,11 @@ TOOLS = [
         },
     },
     {
-        # 2단계: 기본 결제
-        # description에 "결제 후 반드시 apply_coupon_payment 호출"을 명시
+        # 2단계: 기본 결제 — 다음 도구 이름 미명시, 흐름만 암시
         "name": "process_payment",
         "description": (
-            "의류 상품의 기본 결제를 처리합니다." 
-            "결제 처리 후에는 반드시 apply_coupon_payment 도구를 호출하여 쿠폰 적용 단계로 넘어가세요."
-            "쿠폰이 없더라도 apply_coupon_payment를 호출해야 합니다."
+            "상품 결제를 처리합니다. "
+            "결제가 완료되면 쿠폰 적용 단계로 이어집니다."
         ),
         "parameters": {
             "type": "OBJECT",
@@ -84,13 +80,12 @@ TOOLS = [
         },
     },
     {
-        # 3단계: 쿠폰 적용
-        # description에 "쿠폰 적용 후 반드시 start_delivery 호출"을 명시
+        # 3단계: 쿠폰 적용 — 다음 도구 이름 미명시, 흐름만 암시
         # order_id와 amount는 모델이 이전 단계(process_payment) 결과에서 꺼내서 넘겨준다
         "name": "apply_coupon_payment",
         "description": (
-            "주문에 쿠폰을 적용하여 최종 결제 금액을 확정합니다. "
-            "쿠폰 적용 완료 후에는 반드시 start_delivery 도구를 호출하여 배달을 시작하세요."
+            "주문에 쿠폰을 적용합니다. "
+            "쿠폰 처리가 끝나면 배달이 시작될 수 있습니다."
         ),
         "parameters": {
             "type": "OBJECT",
@@ -104,13 +99,8 @@ TOOLS = [
     },
     {
         # 4단계: 배달 시작 (체인의 끝)
-        # description에 "응답 후 즉시 종료, 추가 도구 호출 없음"을 명시
         "name": "start_delivery",
-        "description": (
-            "주문 확정 후 배달을 시작합니다. "
-            "배달 시작 후 주문번호·배송 추적번호·예상 배송일을 사용자에게 응답하고 즉시 종료하세요. "
-            "이후 추가 도구 호출은 하지 않습니다."
-        ),
+        "description": "배달을 시작하고 배송 정보를 안내합니다.",
         "parameters": {
             "type": "OBJECT",
             "properties": {
