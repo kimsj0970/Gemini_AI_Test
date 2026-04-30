@@ -114,6 +114,7 @@ def check_stock(item_name: str, size: str = None, color: str = None) -> dict:
             "stock": qty,
             "base_price": _PRICE_DB.get(category, 50000),
             "message": f"재고 {qty}개 있음.",
+            "next_step": "재고가 확인되었습니다. 고객이 구매를 원한다면 결제를 진행할 수 있습니다.",
         }
     else:
         return {
@@ -138,6 +139,7 @@ def process_payment(item_name: str, size: str = None, color: str = None) -> dict
         "color": color or "미지정",
         "amount": price,
         "message": "기본 결제 처리 완료. 쿠폰 적용 단계로 이동합니다.",
+        "next_step": "결제가 완료되었습니다. 쿠폰 적용 여부를 확인하고 다음 단계를 진행해 주세요.",
     }
 
 
@@ -160,6 +162,7 @@ def apply_coupon(order_id: str, amount: int, coupon_code: str = None) -> dict:
         "coupon_applied": coupon_applied,
         "final_amount": final_price,
         "message": "쿠폰 적용 완료. 배달 시작 단계로 이동합니다.",
+        "next_step": "최종 금액이 확정되었습니다. 이제 배송을 시작할 수 있습니다.",
     }
 
 
